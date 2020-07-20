@@ -89,6 +89,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             String messageType;
             String title = null;
             String body = null;
+            String tag = null;
             String id = null;
             String sound = null;
             String vibrate = null;
@@ -110,6 +111,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 RemoteMessage.Notification notification = remoteMessage.getNotification();
                 title = notification.getTitle();
                 body = notification.getBody();
+                tag = notification.getTag();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     channelId = notification.getChannelId();
                 }
@@ -128,6 +130,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 }
                 if(data.containsKey("notification_title")) title = data.get("notification_title");
                 if(data.containsKey("notification_body")) body = data.get("notification_body");
+                if(data.containsKey("notification_tag")) tag = data.get("notification_tag");
                 if(data.containsKey("notification_android_channel_id")) channelId = data.get("notification_android_channel_id");
                 if(data.containsKey("notification_android_id")) id = data.get("notification_android_id");
                 if(data.containsKey("notification_android_sound")) sound = data.get("notification_android_sound");
@@ -137,6 +140,17 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 if(data.containsKey("notification_android_icon")) icon = data.get("notification_android_icon");
                 if(data.containsKey("notification_android_visibility")) visibility = data.get("notification_android_visibility");
                 if(data.containsKey("notification_android_priority")) priority = data.get("notification_android_priority");
+            }
+
+            if (TextUtils.isEmpty(tag)) {
+                // Make sure we don't accidentally pass an empty tag ""
+                // Otherwise we might override notifications the user did not mean to override
+                tag = null;
+            }
+            if (!TextUtils.isEmpty(tag)) {
+                // Override the unique FCM ID with an ID based on the tag if given
+                // => any previous notification with the same tag gets the same ID and will get updated
+                id = tag;
             }
 
             if (TextUtils.isEmpty(id)) {
@@ -149,6 +163,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             Log.d(TAG, "Id: " + id);
             Log.d(TAG, "Title: " + title);
             Log.d(TAG, "Body: " + body);
+            Log.d(TAG, "Tag: " + tag);
             Log.d(TAG, "Sound: " + sound);
             Log.d(TAG, "Vibrate: " + vibrate);
             Log.d(TAG, "Light: " + light);
@@ -161,15 +176,15 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
 
             if (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title) || (data != null && !data.isEmpty())) {
                 boolean showNotification = (FirebasePlugin.inBackground() || !FirebasePlugin.hasNotificationsCallback() || foregroundNotification) && (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title));
-                sendMessage(remoteMessage, data, messageType, id, title, body, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility);
+                sendMessage(remoteMessage, data, messageType, id, title, body, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility, tag);
             }
         }catch (Exception e){
             FirebasePlugin.handleExceptionWithoutContext(e);
         }
     }
 
-    private void sendMessage(RemoteMessage remoteMessage, Map<String, String> data, String messageType, String id, String title, String body, boolean showNotification, String sound, String vibrate, String light, String color, String icon, String channelId, String priority, String visibility) {
-        Log.d(TAG, "sendMessage(): messageType="+messageType+"; showNotification="+showNotification+"; id="+id+"; title="+title+"; body="+body+"; sound="+sound+"; vibrate="+vibrate+"; light="+light+"; color="+color+"; icon="+icon+"; channel="+channelId+"; data="+data.toString());
+    private void sendMessage(RemoteMessage remoteMessage, Map<String, String> data, String messageType, String id, String title, String body, boolean showNotification, String sound, String vibrate, String light, String color, String icon, String channelId, String priority, String visibility, String tag) {
+        Log.d(TAG, "sendMessage(): messageType="+messageType+"; showNotification="+showNotification+"; id="+id+"; title="+title+"; body="+body+"; sound="+sound+"; vibrate="+vibrate+"; light="+light+"; color="+color+"; icon="+icon+"; channel="+channelId+"; data="+data.toString()+"; tag="+tag);
         Bundle bundle = new Bundle();
         for (String key : data.keySet()) {
             bundle.putString(key, data.get(key));
@@ -178,6 +193,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
         this.putKVInBundle("id", id, bundle);
         this.putKVInBundle("title", title, bundle);
         this.putKVInBundle("body", body, bundle);
+        this.putKVInBundle("tag", tag, bundle);
         this.putKVInBundle("sound", sound, bundle);
         this.putKVInBundle("vibrate", vibrate, bundle);
         this.putKVInBundle("light", light, bundle);
@@ -334,7 +350,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             // Display notification
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             Log.d(TAG, "show notification: "+notification.toString());
-            notificationManager.notify(id.hashCode(), notification);
+            notificationManager.notify(tag, id.hashCode(), notification);
         }
         // Send to plugin
         FirebasePlugin.sendMessage(bundle, this.getApplicationContext());
