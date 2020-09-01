@@ -82,6 +82,10 @@ var parsePluginVariables = function(){
             }
         }
     }
+
+    // set platform key path from plugin variable
+    if (pluginVariables.ANDROID_FIREBASE_CONFIG_FILEPATH) PLATFORM.ANDROID.src = [pluginVariables.ANDROID_FIREBASE_CONFIG_FILEPATH];
+    if (pluginVariables.IOS_FIREBASE_CONFIG_FILEPATH) PLATFORM.IOS.src = [pluginVariables.IOS_FIREBASE_CONFIG_FILEPATH];
 };
 
 module.exports = function (context) {
