@@ -516,7 +516,7 @@ public class FirebasePlugin extends CordovaPlugin {
         final CallbackContext callbackContext = FirebasePlugin.notificationCallbackContext;
         if(bundle != null){
             // Pass the message bundle to the receiver manager so any registered receivers can decide to handle it
-            boolean wasHandled = FirebasePluginMessageReceiverManager.sendMessage(bundle);
+            boolean wasHandled = FirebasePluginMessageReceiverManager.sendMessage(bundle, context);
             if (wasHandled) {
                 Log.d(TAG, "Message bundle was handled by a registered receiver");
             }else if (callbackContext != null) {

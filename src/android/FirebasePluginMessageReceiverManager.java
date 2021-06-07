@@ -1,5 +1,6 @@
 package org.apache.cordova.firebase;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import com.google.firebase.messaging.RemoteMessage;
@@ -15,10 +16,10 @@ public class FirebasePluginMessageReceiverManager {
         receivers.add(receiver);
     }
 
-    public static boolean onMessageReceived(RemoteMessage remoteMessage) {
+    public static boolean onMessageReceived(RemoteMessage remoteMessage, Context context) {
         boolean handled = false;
         for (FirebasePluginMessageReceiver receiver : receivers) {
-            boolean wasHandled = receiver.onMessageReceived(remoteMessage);
+            boolean wasHandled = receiver.onMessageReceived(remoteMessage, context);
             if (wasHandled) {
                 handled = true;
             }
@@ -27,10 +28,10 @@ public class FirebasePluginMessageReceiverManager {
         return handled;
     }
 
-    public static boolean sendMessage(Bundle bundle) {
+    public static boolean sendMessage(Bundle bundle, Context context) {
             boolean handled = false;
             for (FirebasePluginMessageReceiver receiver : receivers) {
-                boolean wasHandled = receiver.sendMessage(bundle);
+                boolean wasHandled = receiver.sendMessage(bundle, context);
                 if (wasHandled) {
                     handled = true;
                 }
