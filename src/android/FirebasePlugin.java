@@ -210,6 +210,8 @@ public class FirebasePlugin extends CordovaPlugin {
                     defaultChannelId = getStringResource("default_notification_channel_id");
                     defaultChannelName = getStringResource("default_notification_channel_name");
                     createDefaultChannel();
+
+                    FirebasePluginMessageReceiverManager.initialize(applicationContext);
                 }catch (Exception e){
                     handleExceptionWithoutContext(e);
                 }
