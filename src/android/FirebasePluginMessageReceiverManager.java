@@ -67,7 +67,11 @@ public class FirebasePluginMessageReceiverManager {
      */
     private static void addReceiver(FirebasePluginMessageReceiver receiver) {
 
-        receivers.add(receiver);
+        synchronized (FirebasePluginMessageReceiverManager.class) {
+            List<FirebasePluginMessageReceiver> receiversNew = new ArrayList<>(receivers);
+            receiversNew.add(receiver);
+            receivers = receiversNew;
+        }
 
         //register static receiver if applicable
         addStaticReceiver(null, receiver);
@@ -104,18 +108,30 @@ public class FirebasePluginMessageReceiverManager {
 
         for (Class<? extends FirebasePluginMessageReceiver> receiverClass : loadStaticReceivers(context)) {
 
-            try {
-                FirebasePluginMessageReceiver receiver = receiverClass.getConstructor().newInstance();
-                staticReceives.add(receiver);
+            //check if we already have such a receiver
+            boolean receiverExists = false;
+            for (FirebasePluginMessageReceiver receiver : receivers) {
+                if (receiverClass.equals(receiver.getClass())) {
+                    //class matches. skip this one
+                    receiverExists = true;
+                    break;
+                }
             }
-            catch (InvocationTargetException e) {
-                //exception thrown in the constructor. log the exception but keep this class around
-                FirebasePlugin.handleExceptionWithoutContext(e);
-            }
-            catch (Exception e) {
-                //some other reflection related error => drop the class
-                Log.e(TAG, String.format("Could not instantiate static receiver of type %s. Missing a public zero argument constructor?", receiverClass.getSimpleName()), e);
-                continue;
+
+            if (!receiverExists) {
+                try {
+                    FirebasePluginMessageReceiver receiver = receiverClass.getConstructor().newInstance();
+                    staticReceives.add(receiver);
+                }
+                catch (InvocationTargetException e) {
+                    //exception thrown in the constructor. log the exception but keep this class around
+                    FirebasePlugin.handleExceptionWithoutContext(e);
+                }
+                catch (Exception e) {
+                    //some other reflection related error => drop the class
+                    Log.e(TAG, String.format("Could not instantiate static receiver of type %s. Missing a public zero argument constructor?", receiverClass.getSimpleName()), e);
+                    continue;
+                }
             }
 
             receiverClassesNew.add(receiverClass);
@@ -124,6 +140,7 @@ public class FirebasePluginMessageReceiverManager {
         //the constructors we're calling here cause those instances to be added to our in-memory list of receivers
         //in theory, the constructors may cause additional receivers to be attached
         //=> we check on the current list of receivers to be extra neat
+        //this also causes us to save receivers that had been attached before #initialize had been called
         for (FirebasePluginMessageReceiver receiver : receivers) {
             if (receiver instanceof FirebasePluginMessageReceiverStatic) {
                 receiverClassesNew.add(receiver.getClass());
