@@ -2715,6 +2715,16 @@ public class FirebasePlugin extends CordovaPlugin {
         }
     }
 
+    /**
+     * Logs the given exception to Crashlytics and to the WebView if they are initialized and available.
+     * If they are not initialized (for example because the app has not been started by launching
+     * the main activity) the exception is simply logged via the default Android log.
+     * @param e
+     */
+    public static void log(Exception e) {
+        handleExceptionWithoutContext(e);
+    }
+
     protected void sendPluginResultAndKeepCallback(String result, CallbackContext callbackContext){
         PluginResult pluginresult = new PluginResult(PluginResult.Status.OK, result);
         sendPluginResultAndKeepCallback(pluginresult, callbackContext);
