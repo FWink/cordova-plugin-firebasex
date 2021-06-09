@@ -68,6 +68,17 @@ public class FirebasePluginMessageReceiverManager {
     private static void addReceiver(FirebasePluginMessageReceiver receiver) {
 
         synchronized (FirebasePluginMessageReceiverManager.class) {
+
+            if (receiver instanceof FirebasePluginMessageReceiverStatic) {
+                //do not add this one if an instance of this class is already registered
+                for (FirebasePluginMessageReceiver receiverExists :receivers){
+                    if (receiver.getClass().equals(receiverExists.getClass())) {
+                        //exists. do nothing
+                        return;
+                    }
+                }
+            }
+
             List<FirebasePluginMessageReceiver> receiversNew = new ArrayList<>(receivers);
             receiversNew.add(receiver);
             receivers = receiversNew;
