@@ -306,7 +306,8 @@ static NSString* currentInstallationId;
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                 }else{
-                    [UNUserNotificationCenter currentNotificationCenter].delegate = (id<UNUserNotificationCenterDelegate> _Nullable) self;
+                    //this does not appear to do anything useful. in fact, this causes local notifications to fail as there is no properly functioning delegate anymore
+                    //[UNUserNotificationCenter currentNotificationCenter].delegate = (id<UNUserNotificationCenterDelegate> _Nullable) self;
                     UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert|UNAuthorizationOptionSound|UNAuthorizationOptionBadge;
                     [[UNUserNotificationCenter currentNotificationCenter]
                      requestAuthorizationWithOptions:authOptions
