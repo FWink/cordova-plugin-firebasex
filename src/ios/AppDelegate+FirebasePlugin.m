@@ -134,9 +134,11 @@ didSignInForUser:(GIDGoogleUser *)user
                                            accessToken:authentication.accessToken];
             
             NSNumber* key = [[FirebasePlugin firebasePlugin] saveAuthCredential:credential];
+            NSString *idToken = user.authentication.idToken;
             NSMutableDictionary* result = [[NSMutableDictionary alloc] init];
             [result setValue:@"true" forKey:@"instantVerification"];
             [result setValue:key forKey:@"id"];
+            [result setValue:idToken forKey:@"idToken"];
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
         } else {
           pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.description];
@@ -187,7 +189,11 @@ didDisconnectWithUser:(GIDGoogleUser *)user
         NSDictionary* aps = [mutableUserInfo objectForKey:@"aps"];
         bool isContentAvailable = false;
         if([aps objectForKey:@"alert"] != nil){
-            isContentAvailable = [[aps objectForKey:@"content-available"] isEqualToNumber:[NSNumber numberWithInt:1]];
+            
+            if([aps objectForKey:@"content-available"] != nil){
+                NSNumber* contentAvailable = (NSNumber*) [aps objectForKey:@"content-available"];
+                isContentAvailable = [contentAvailable isEqualToNumber:[NSNumber numberWithInt:1]];
+            }
             [mutableUserInfo setValue:@"notification" forKey:@"messageType"];
             NSString* tap;
             if([self.applicationInBackground isEqual:[NSNumber numberWithBool:YES]] && !isContentAvailable){
@@ -324,6 +330,16 @@ didDisconnectWithUser:(GIDGoogleUser *)user
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
     [FirebasePlugin.firebasePlugin _logError:[NSString stringWithFormat:@"didFailToRegisterForRemoteNotificationsWithError: %@", error.description]];
 }
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center openSettingsForNotification:(UNNotification *)notification
+{
+    @try {
+        [FirebasePlugin.firebasePlugin sendOpenNotificationSettings];
+    } @catch (NSException *exception) {
+        [FirebasePlugin.firebasePlugin handlePluginExceptionWithoutContext:exception];
+    }
+}
+
 
 // Asks the delegate how to handle a notification that arrived while the app was running in the foreground
 // Called when an APS notification arrives when app is in foreground

@@ -1,3 +1,35 @@
+# Version 13.0.1
+* (iOS) Fix `onTokenRefresh` to return FCM token (not installation auth token).
+    * Resolves [#637](https://github.com/dpa99c/cordova-plugin-firebasex/issues/637)
+* (Android): Increment pinned version of Crashlytics Gradle plugin to [v2.7.1](https://firebase.google.com/support/release-notes/android#crashlytics_gradle_plugin_v2-7-1) to resolve build issues with Gradle v7.
+    * This resolves build issues with `cordova-android@10.0.0` which defaults to Gradle v7.1.1
+    * Resolves [#643](https://github.com/dpa99c/cordova-plugin-firebasex/issues/643)
+* (iOS) Bump pinned Firebase SDK components to [v8.4.0 - July 20, 2021](https://firebase.google.com/support/release-notes/ios#version_840_-_july_20_2021)
+* (Android): Update pinned Firebase Android SDK versions from BoM v28.1.0 to ([v28.2.1 - July 09, 2021](https://firebase.google.com/support/release-notes/android#bom_v28-2-1))
+
+
+# Version 13.0.0
+* (iOS) BREAKING CHANGE: Major version update to Firebase iOS SDK from v7 to v8 ([Version 8.1.1 - June 11, 2021](https://firebase.google.com/support/release-notes/ios#version_811_-_june_11_2021))
+    * Remove/replace references to previously-deprecated Firebase IID SDK component which is removed in SDK v8 with Firebase Installations SDK
+* (Android) BREAKING CHANGE: Major version update to Firebase Android BOM from v26 to v28 ([v28.1.0 - June 03, 2021](https://firebase.google.com/support/release-notes/android#2021-06-03))
+    * Remove/replace references to previously-deprecated Firebase IID SDK component which is removed in SDK BOM v28 with Firebase Installations SDK
+    * Add explicit dependency on deprecated `firebase-iid` because latest version `firebase-functions:20.0.0` [depends on an older version](https://mvnrepository.com/artifact/com.google.firebase/firebase-functions/20.0.0) and so causes duplicate class conflicts with latest `firebase-messaging:22.0.0`
+* (Android) doc: Add note regarding creating new notification channels for each new sound.
+    * Relates to [#560](https://github.com/dpa99c/cordova-plugin-firebasex/issues/560).
+* doc: Add note regarding allowed values for `logEvent`
+    * Merged from PR [#619](https://github.com/dpa99c/cordova-plugin-firebasex/pull/619).
+* (Android) bugfix: Fix sound configuration per channel
+    * Merged from PR [#625](https://github.com/dpa99c/cordova-plugin-firebasex/pull/625).
+* (iOS & Android) feature(auth): add idToken on signIn w/ Google response
+    * Merged from PR [#633](https://github.com/dpa99c/cordova-plugin-firebasex/pull/633).
+* (iOS) feature: support for `AppNotificationSettingsButton`
+    * Merged from PR [#577](https://github.com/dpa99c/cordova-plugin-firebasex/pull/577).
+* (iOS) bugfix: Check `content-available` key is present before casting it.
+    * Resolves [#624](https://github.com/dpa99c/cordova-plugin-firebasex/issues/624)
+* (iOS & Android) bugfix: Convert references to their path strings when fetching data from Firestore to avoid crashes due to circular references.
+    * Resolves [#617](https://github.com/dpa99c/cordova-plugin-firebasex/issues/617)
+
+
 # Version 12.1.0
 * (iOS & Android) feature: Add support for Firebase Installations SDK.
     * Resolves [#603](https://github.com/dpa99c/cordova-plugin-firebasex/issues/603)

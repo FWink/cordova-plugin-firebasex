@@ -1278,6 +1278,15 @@ Notes:
 - If your app is in the background/not running when the notification message arrives and a system notification is displayed, if the user chooses an action (instead of tapping the notification dialog body), your app will not be launched/foregrounded but [`onMessageReceived()`](#onmessagereceived) will be invoked, enabling your app code to handle the user's action selection silently in the background.
 - You can test out actionable notifications by building and running [example project](https://github.com/dpa99c/cordova-plugin-firebasex-test) app and sending the [ios_notification_actionable.json](https://github.com/dpa99c/cordova-plugin-firebasex-test/blob/master/messages/ios_notification_actionable.json) FCM message using the [built-in FCM v1 HTTP API client](https://github.com/dpa99c/cordova-plugin-firebasex-test#messaging-client) which contains a category defined in the example [pn-actions.json](https://github.com/dpa99c/cordova-plugin-firebasex-test/blob/master/res/ios/pn-actions.json).
 
+### iOS notification settings button
+
+<img width="300" src="https://i.stack.imgur.com/84LDU.jpg">
+
+Adding such a Button is possible with this Plugin.
+To enable this Feature, you need to pass `true` for **requestWithProvidesAppNotificationSettings** when you [request the Permission](#grantpermission).
+
+You then need to subscribe to `onOpenSettings` and open your apps notification settings page.
+
 ## Data messages
 FCM data messages are sent as an arbitrary k/v structure and by default are passed to the app for it to handle them.
 
@@ -1550,6 +1559,22 @@ FirebasePlugin.onApnsTokenReceived(function(apnsToken) {
 });
 ```
 
+### onOpenSettings
+iOS only
+Registers a callback function to invoke when the AppNotificationSettingsButton is tapped by the user
+
+**Parameters**:
+- {function} success - callback function which will be invoked without any argument
+- {function} error - callback function which will be passed a {string} error message as an argument
+
+```javascript
+FirebasePlugin.onOpenSettings(function() {
+    console.log("Redirect to App Notification Settings Page here");
+}, function(error) {
+    console.error(error);
+});
+```
+
 ### onMessageReceived
 Registers a callback function to invoke when:
 - a notification or data message is received by the app
@@ -1606,6 +1631,7 @@ iOS only (Android will always return true).
 **Parameters**:
 - {function} success - callback function which will be passed the {boolean} permission result as an argument
 - {function} error - callback function which will be passed a {string} error message as an argument
+- {boolean} requestWithProvidesAppNotificationSettings - boolean which indicates if app provides AppNotificationSettingsButton (**iOS12+ only**)
 
 ```javascript
 FirebasePlugin.grantPermission(function(hasPermission){
@@ -2025,7 +2051,8 @@ Log an event using Analytics:
 
 **Parameters**:
 - {string} eventName - name of event to log to Firebase Analytics
-    - [Limit](https://support.google.com/firebase/answer/9237506?hl=en) of 40 characters
+    - [Limit](https://support.google.com/firebase/answer/9237506?hl=en) of 40 characters.
+    - Dots are not allowed in eventName.
 - {object} eventProperties - key/value object of custom event properties.
     - This must be a flat (non-nested) object.
     - The value must be a primitive type such as string/number/etc. (not a complex object such as array or nested object).
@@ -2193,6 +2220,7 @@ In a Cordova app, you may use this to log unhandled Javascript exceptions, for e
 
 The event will appear under `Event type = "Non-fatals"` in the Crashlytics console.
 The error message will appear in the `Logs` section of the non-fatal error event.
+Note that logged errors will only be sent to the Crashlytics server on the next full app restart.
 Also logs the error message to the native device console.
 
 **Parameters**:
@@ -2645,6 +2673,7 @@ Authenticates the user with a Google account to obtain a credential that can be 
 - {string} clientId - your OAuth 2.0 client ID - [see here](https://developers.google.com/identity/sign-in/android/start-integrating#get_your_backend_servers_oauth_20_client_id) how to obtain it.
 - {function} success - callback function to pass {object} credentials to as an argument. The credential object has the following properties:
     - {string} id - the identifier of a native credential object which can be used for signing in the user.
+    - {string} idToken - the identiy token from Google account. Could be useful if you want to sign-in with on JS layer.
 - {function} error - callback function which will be passed a {string} error message as an argument
 
 Example usage:
@@ -3206,7 +3235,9 @@ FirebasePlugin.documentExistsInFirestoreCollection(documentId, collection, funct
 ### fetchDocumentInFirestoreCollection
 Fetches an existing document with the given ID from a Firestore collection.
 
-Note: If the no document with the specified ID exists in the collection, the error callback will be invoked.
+Notes:
+- If no document with the specified ID exists in the collection, the error callback will be invoked.
+- If the document contains references to another document, they will be converted to the document path string to avoid circular reference issues.
 
 **Parameters**:
 - {string} documentId - document ID of the document to fetch.
@@ -3227,6 +3258,10 @@ FirebasePlugin.fetchDocumentInFirestoreCollection(documentId, collection, functi
 
 ### fetchFirestoreCollection
 Fetches all the documents in the specific collection.
+
+Notes:
+- If no collection with the specified name exists, the error callback will be invoked.
+- If the documents in the collection contain references to another document, they will be converted to the document path string to avoid circular reference issues.
 
 **Parameters**:
 - {string} collection - name of top-level collection to fetch.
@@ -3280,6 +3315,8 @@ FirebasePlugin.fetchFirestoreCollection(collection, filters, function(documents)
 
 ### listenToDocumentInFirestoreCollection
 Adds a listener to detect real-time changes to the specified document.
+
+Note: If the document contains references to another document, they will be converted to the document path string to avoid circular reference issues.
 
 Upon adding a listener using this function, the success callback function will be invoked with an `id` event which specifies the native ID of the added listener.
 This can be used to subsequently remove the listener using [`removeFirestoreListener()`](#removefirestorelistener).
@@ -3356,6 +3393,8 @@ FirebasePlugin.listenToDocumentInFirestoreCollection(function(event){
 
 ### listenToFirestoreCollection
 Adds a listener to detect real-time changes to documents in a Firestore collection.
+
+Note: If the documents in the collection contain references to another document, they will be converted to the document path string to avoid circular reference issues.
 
 Upon adding a listener using this function, the success callback function will be invoked with an `id` event which specifies the native ID of the added listener.
 This can be used to subsequently remove the listener using [`removeFirestoreListener()`](#removefirestorelistener).
