@@ -85,9 +85,6 @@ static bool authStateChangeListenerInitialized = false;
         // Setup Firestore
         [FirebasePlugin setFirestore:[FIRFirestore firestore]];
         
-        // Setup Google SignIn
-        [GIDSignIn sharedInstance].clientID = [FIRApp defaultApp].options.clientID;
-        [GIDSignIn sharedInstance].delegate = self;
         
         authStateChangeListener = [[FIRAuth auth] addAuthStateDidChangeListener:^(FIRAuth * _Nonnull auth, FIRUser * _Nullable user) {
             @try {
@@ -121,46 +118,6 @@ static bool authStateChangeListenerInitialized = false;
     [FirebasePlugin.firebasePlugin _logMessage:@"Enter background"];
 }
 
-# pragma mark - Google SignIn
-- (void)signIn:(GIDSignIn *)signIn
-didSignInForUser:(GIDGoogleUser *)user
-     withError:(NSError *)error {
-    @try{
-        CDVPluginResult* pluginResult;
-        if (error == nil) {
-            GIDAuthentication *authentication = user.authentication;
-            FIRAuthCredential *credential =
-            [FIRGoogleAuthProvider credentialWithIDToken:authentication.idToken
-                                           accessToken:authentication.accessToken];
-            
-            NSNumber* key = [[FirebasePlugin firebasePlugin] saveAuthCredential:credential];
-            NSString *idToken = user.authentication.idToken;
-            NSMutableDictionary* result = [[NSMutableDictionary alloc] init];
-            [result setValue:@"true" forKey:@"instantVerification"];
-            [result setValue:key forKey:@"id"];
-            [result setValue:idToken forKey:@"idToken"];
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
-        } else {
-          pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.description];
-        }
-        if ([FirebasePlugin firebasePlugin].googleSignInCallbackId != nil) {
-            [[FirebasePlugin firebasePlugin].commandDelegate sendPluginResult:pluginResult callbackId:[FirebasePlugin firebasePlugin].googleSignInCallbackId];
-        }
-    }@catch (NSException *exception) {
-        [FirebasePlugin.firebasePlugin handlePluginExceptionWithoutContext:exception];
-    }
-}
-
-- (void)signIn:(GIDSignIn *)signIn
-didDisconnectWithUser:(GIDGoogleUser *)user
-     withError:(NSError *)error {
-    NSString* msg = @"Google SignIn delegate: didDisconnectWithUser";
-    if(error != nil){
-        [FirebasePlugin.firebasePlugin _logError:[NSString stringWithFormat:@"%@: %@", msg, error]];
-    }else{
-        [FirebasePlugin.firebasePlugin _logMessage:msg];
-    }
-}
 
 # pragma mark - FIRMessagingDelegate
 - (void)messaging:(FIRMessaging *)messaging didReceiveRegistrationToken:(NSString *)fcmToken {
@@ -181,10 +138,15 @@ didDisconnectWithUser:(GIDGoogleUser *)user
 //Tells the app that a remote notification arrived that indicates there is data to be fetched.
 // Called when a message arrives in the foreground and remote notifications permission has been granted
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
-    fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-
+fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+    
     @try{
         [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+        if([[FIRAuth auth] canHandleNotification:userInfo] || [userInfo objectForKey:@"com.google.firebase.auth"] != nil){
+            [FirebasePlugin.firebasePlugin _logMessage:@"Received notification message intended for Firebase Auth"];
+            completionHandler(UIBackgroundFetchResultNoData);
+            return;
+        }
         mutableUserInfo = [userInfo mutableCopy];
         NSDictionary* aps = [mutableUserInfo objectForKey:@"aps"];
         bool isContentAvailable = false;
@@ -499,9 +461,22 @@ didDisconnectWithUser:(GIDGoogleUser *)user
                         rawNonce:rawNonce];
                     
                     NSNumber* key = [[FirebasePlugin firebasePlugin] saveAuthCredential:credential];
+                    NSString *authorizationCode = [[NSString alloc] initWithData:appleIDCredential.authorizationCode
+                                                                        encoding:NSUTF8StringEncoding];
                     NSMutableDictionary* result = [[NSMutableDictionary alloc] init];
                     [result setValue:@"true" forKey:@"instantVerification"];
                     [result setValue:key forKey:@"id"];
+                    if(authorizationCode != nil){
+                        [result setValue:authorizationCode forKey:@"authorizationCode"];
+                    }
+                    if(appleIDCredential.fullName != nil){
+                        if(appleIDCredential.fullName.givenName != nil){
+                            [result setValue:appleIDCredential.fullName.givenName forKey:@"givenName"];
+                        }
+                        if(appleIDCredential.fullName.familyName != nil){
+                            [result setValue:appleIDCredential.fullName.familyName forKey:@"familyName"];
+                        }
+                    }
                     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
                 }
             }
