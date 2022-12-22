@@ -307,7 +307,8 @@ static FIRMultiFactorResolver* multiFactorResolver;
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                 }else{
-                    [UNUserNotificationCenter currentNotificationCenter].delegate = (id<UNUserNotificationCenterDelegate> _Nullable) self;
+                    //this does not appear to do anything useful. in fact, this causes local notifications to fail as there is no properly functioning delegate anymore
+                    //[UNUserNotificationCenter currentNotificationCenter].delegate = (id<UNUserNotificationCenterDelegate> _Nullable) self;
                     BOOL requestWithProvidesAppNotificationSettings = [[command argumentAtIndex:0] boolValue];
                     UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert|UNAuthorizationOptionSound|UNAuthorizationOptionBadge;
                     if (@available(iOS 12.0, *)) {

@@ -235,6 +235,8 @@ public class FirebasePlugin extends CordovaPlugin {
                     defaultChannelId = getStringResource("default_notification_channel_id");
                     defaultChannelName = getStringResource("default_notification_channel_name");
                     createDefaultChannel();
+
+                    FirebasePluginMessageReceiverManager.initialize(applicationContext);
                 }catch (Exception e){
                     handleExceptionWithoutContext(e);
                 }
@@ -580,7 +582,7 @@ public class FirebasePlugin extends CordovaPlugin {
         final CallbackContext callbackContext = FirebasePlugin.notificationCallbackContext;
         if(bundle != null){
             // Pass the message bundle to the receiver manager so any registered receivers can decide to handle it
-            boolean wasHandled = FirebasePluginMessageReceiverManager.sendMessage(bundle);
+            boolean wasHandled = FirebasePluginMessageReceiverManager.sendMessage(bundle, context);
             if (wasHandled) {
                 Log.d(TAG, "Message bundle was handled by a registered receiver");
             }else if (callbackContext != null) {
@@ -3495,6 +3497,16 @@ public class FirebasePlugin extends CordovaPlugin {
             instance.logExceptionToCrashlytics(e);
             instance.logErrorToWebview(msg);
         }
+    }
+
+    /**
+     * Logs the given exception to Crashlytics and to the WebView if they are initialized and available.
+     * If they are not initialized (for example because the app has not been started by launching
+     * the main activity) the exception is simply logged via the default Android log.
+     * @param e
+     */
+    public static void log(Exception e) {
+        handleExceptionWithoutContext(e);
     }
 
     protected void sendPluginResultAndKeepCallback(String result, CallbackContext callbackContext){

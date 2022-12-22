@@ -57,6 +57,7 @@
 		<source-file src="src/android/OnNotificationReceiverActivity.java" target-dir="src/org/apache/cordova/firebase" />
 		<source-file src="src/android/FirebasePluginMessagingService.java" target-dir="src/org/apache/cordova/firebase" />
 		<source-file src="src/android/FirebasePluginMessageReceiver.java" target-dir="src/org/apache/cordova/firebase" />
+		<source-file src="src/android/FirebasePluginMessageReceiverStatic.java" target-dir="src/org/apache/cordova/firebase" />
 		<source-file src="src/android/FirebasePluginMessageReceiverManager.java" target-dir="src/org/apache/cordova/firebase" />
 		<source-file src="src/android/JavaScriptException.java" target-dir="src/org/apache/cordova/firebase"/>
 
