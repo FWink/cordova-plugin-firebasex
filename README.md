@@ -285,6 +285,9 @@ See [Specifying Android library versions](#specifying-android-library-versions) 
   - `--variable IOS_ENABLE_CRITICAL_ALERTS_ENABLED=true`
   - See [iOS critical notifications](#ios-critical-notifications)
   - Ensure the associated app provisioning profile also has this capability enabled.
+- `IOS_FCM_ENABLED` - allows to completely disable push notifications functionality of the plugin (not just the automatic initialization that is covered by `FIREBASE_FCM_AUTOINIT_ENABLED` variable).
+  - Defaults to `true`, if not specified; i.e. FCM is enabled by default.
+  - This can be handy if you are using this plugin for e.g. Crashlytics and handle push notifications using another plugin. Use `--variable IOS_FCM_ENABLED=false` in this case.
 
 ## Supported Cordova Versions
 - cordova: `>= 10`
@@ -658,7 +661,7 @@ Before [opening a bug issue](https://github.com/dpa99c/cordova-plugin-firebasex/
     - Ask for help on StackOverflow, Ionic Forums, etc.
     - Use the [example project](https://github.com/dpa99c/cordova-plugin-firebasex-test) as a known working reference
     - Any issues requesting support will be closed immediately.
-- *DO NOT* open issues related to the  [Ionic Typescript wrapper for this plugin](https://github.com/ionic-team/ionic-native/blob/master/src/%40ionic-native/plugins/firebase-x/index.ts)
+- *DO NOT* open issues related to the  [Ionic Typescript wrapper for this plugin](https://github.com/ionic-team/ionic-native/blob/master/src/%40awesome-cordova-plugins/plugins/firebase-x/index.ts)
     - This is owned/maintained by [Ionic](https://github.com/ionic-team) and is not part of this plugin
     - Please raise such issues/PRs against [Ionic Native](https://github.com/ionic-team/ionic-native/) instead.
 	- To verify an if an issue is caused by this plugin or its Typescript wrapper, please re-test using the vanilla Javascript plugin interface (without the Ionic Native wrapper).
@@ -1466,6 +1469,9 @@ The following iOS-specific keys are supported and should be placed inside the `d
     - To play the default notification sound, set `"sound": "default"`.
     - To display a silent notification (no sound), omit the `sound` key from the message.
 - `notification_ios_badge` - Badge number to display on app icon on home screen.
+- `notification_ios_image_jpg` - Specifies the `jpg` image notification, to use this you need to have configured the `NotificationService` - [Tutorial to set it up](docs/IOS_NOTIFICATION_SERVICE.md)
+- `notification_ios_image_png` - Specifies the `png` image notification, to use this you need to have configured the `NotificationService` - [Tutorial to set it up](docs/IOS_NOTIFICATION_SERVICE.md)
+- `notification_ios_image_gif` - Specifies the `gif` image notification, to use this you need to have configured the `NotificationService` - [Tutorial to set it up](docs/IOS_NOTIFICATION_SERVICE.md)
 
 For example:
 ```json
@@ -1476,7 +1482,8 @@ For example:
     "notification_body" : "Notification body",
     "notification_title": "Notification title",
     "notification_ios_sound": "my_sound.caf",
-    "notification_ios_badge": 1
+    "notification_ios_badge": 1,
+    "notification_ios_image_png": "https://example.com/avatar.png"
   }
 }
 ```
@@ -3087,6 +3094,36 @@ To use Google Sign-in in your Android app you need to do the following:
 
 For details how to do the above, see the [Google Sign-In on Android page](https://firebase.google.com/docs/auth/android/google-signin) in the Firebase documentation.
 
+<br>
+
+**Server side verification**
+
+Once the id token has been obtained from `authenticateUserWithGoogle()` it can be sent to your server to get access to more information about the user's google account. However, it's recommended by Google that the id token be validated on your server before being used. You should generally not trust tokens supplied by clients without performing this validation. While you can write the code to perform this check yourself, it's strongly recommended that you use a library supplied by Google  such as [google-auth-library](https://www.npmjs.com/package/google-auth-library) for this purpose.
+
+The following is sample coded taken from [Google documentation](https://developers.google.com/identity/sign-in/web/backend-auth) for performing a server side verification of an id token:
+
+```javascript
+const {OAuth2Client} = require('google-auth-library');
+
+const client = new OAuth2Client(CLIENT_ID);
+
+async function verify() {
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload();
+    const userid = payload['sub'];
+    // If request specified a G Suite domain:
+    // const domain = payload['hd'];
+}
+verify().catch(console.error);
+```
+
+<br>
+
 ### authenticateUserWithApple
 Authenticates the user with an Apple account using Sign In with Apple to obtain a credential that can be used to sign the user in/link to an existing user account/reauthenticate the user.
 
@@ -4156,6 +4193,41 @@ Example usage:
 ```javascript
     FirebasePlugin.registerInstallationIdChangeListener(function(installationId){
         console.log("New installation ID: "+installationId);
+    });
+```
+
+## Miscellaneous
+Functions unrelated to any specific Firebase SDK component.
+
+### registerApplicationDidBecomeActiveListener
+Registers a Javascript function to invoke when the iOS application becomes active after being in the background.
+
+- iOS only.
+
+**Parameters**:
+- {function} fn - callback function to invoke when application becomes active
+
+Example usage:
+
+```javascript
+    FirebasePlugin.registerApplicationDidBecomeActiveListener(function(){
+        console.log("Application became active");
+    });
+```
+
+### registerApplicationDidEnterBackgroundListener
+Registers a Javascript function to invoke when the iOS application is sent to the background.
+
+- iOS only.
+
+**Parameters**:
+- {function} fn - callback function to invoke when application is sent to the background
+
+Example usage:
+
+```javascript
+    FirebasePlugin.registerApplicationDidEnterBackgroundListener(function(){
+        console.log("Application send to background");
     });
 ```
 
